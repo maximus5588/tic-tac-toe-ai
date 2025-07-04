@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tic Tac Toe - AI Mode</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(145deg, #0f2027, #203a43, #2c5364);
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: white;
+    }
+
+    .container {
+      text-align: center;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      color: white;
+    }
+
+    #mode-switch {
+      margin: 15px 0;
+      font-size: 1rem;
+      color: #ddd;
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      gap: 15px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .cell {
+      width: 100px;
+      height: 100px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      cursor: pointer;
+      transition: transform 0.2s, background 0.3s;
+      color: white;
+    }
+
+    .cell:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: scale(1.05);
+    }
+
+    .cell.x {
+      color: #00ffd5;
+    }
+
+    .cell.o {
+      color: #ff007f;
+    }
+
+    #status {
+      font-size: 1.3rem;
+      margin: 10px 0;
+      color: white;
+    }
+
+    #reset {
+      padding: 10px 25px;
+      font-size: 1rem;
+      background: #ffffff20;
+      border: 1px solid #ffffff30;
+      color: white;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+    }
+
+    #reset:hover {
+      background: #ffffff40;
+      transform: scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Tic Tac Toe</h1>
+    <div id="mode-switch">
+      <label><input type="radio" name="mode" value="human" checked /> Human vs Human</label>
+      <label><input type="radio" name="mode" value="ai" /> Human vs AI</label>
+    </div>
+    <div id="board">
+      <div class="cell" data-index="0"></div>
+      <div class="cell" data-index="1"></div>
+      <div class="cell" data-index="2"></div>
+      <div class="cell" data-index="3"></div>
+      <div class="cell" data-index="4"></div>
+      <div class="cell" data-index="5"></div>
+      <div class="cell" data-index="6"></div>
+      <div class="cell" data-index="7"></div>
+      <div class="cell" data-index="8"></div>
+    </div>
+    <div id="status">Player X's Turn</div>
+    <button id="reset">Restart Game</button>
+  </div>
+
+  <script>
+    const cells = document.querySelectorAll(".cell");
+    const statusText = document.getElementById("status");
+    const resetBtn = document.getElementById("reset");
+    const modeRadios = document.querySelectorAll("input[name='mode']");
+
+    let currentPlayer = "X";
+    let board = ["", "", "", "", "", "", "", "", ""];
+    let gameActive = true;
+    let aiMode = false;
+
+    const winCombos = [
+      [0,1,2],[3,4,5],[6,7,8],
+      [0,3,6],[1,4,7],[2,5,8],
+      [0,4,8],[2,4,6]
+    ];
+
+    modeRadios.forEach(radio => {
+      radio.addEventListener("change", () => {
+        aiMode = document.querySelector("input[name='mode']:checked").value === "ai";
+        resetGame();
+      });
+    });
+
+    function checkWinner() {
+      for (let combo of winCombos) {
+        const [a, b, c] = combo;
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+          const winner = board[a];
+          statusText.innerHTML = `🎉 Player <b>${winner}</b> Wins! ${winner === "X" ? "O got smoked!" : "X just got wrecked!"}`;
+          highlightWinningCells(combo);
+          gameActive = false;
+          return true;
+        }
+      }
+      if (!board.includes("")) {
+        statusText.innerHTML = "🤝 It's a Draw!";
+        gameActive = false;
+        return true;
+      }
+      return false;
+    }
+
+    function highlightWinningCells(combo) {
+      combo.forEach(index => {
+        cells[index].style.background = "rgba(255, 255, 255, 0.25)";
+      });
+    }
+
+    function cellClick(e) {
+      const index = e.target.dataset.index;
+      if (!board[index] && gameActive) {
+        makeMove(index, currentPlayer);
+        if (checkWinner() || !gameActive) return;
+
+        if (aiMode && currentPlayer === "O") {
+          setTimeout(aiMove, 400);
+        }
+      }
+    }
+
+    function makeMove(index, player) {
+      board[index] = player;
+      cells[index].textContent = player;
+      cells[index].classList.add(player.toLowerCase());
+      currentPlayer = currentPlayer === "X" ? "O" : "X";
+      statusText.innerHTML = `👀 Player <b>${currentPlayer}</b>'s Turn`;
+    }
+
+    function aiMove() {
+      if (!gameActive) return;
+      const emptyIndexes = board.map((val, idx) => val === "" ? idx : null).filter(i => i !== null);
+      const randomIndex = emptyIndexes[Math.floor(Math.random() * emptyIndexes.length)];
+      if (randomIndex !== undefined) {
+        makeMove(randomIndex, "O");
+        checkWinner();
+      }
+    }
+
+    function resetGame() {
+      board = ["", "", "", "", "", "", "", "", ""];
+      gameActive = true;
+      currentPlayer = "X";
+      statusText.innerHTML = `🧠 Player <b>${currentPlayer}</b>'s Turn`;
+
+      cells.forEach(cell => {
+        cell.textContent = "";
+        cell.classList.remove("x", "o");
+        cell.removeAttribute("style");
+      });
+    }
+
+    cells.forEach(cell => cell.addEventListener("click", cellClick));
+    resetBtn.addEventListener("click", resetGame);
+  </script>
+</body>
+</html>
